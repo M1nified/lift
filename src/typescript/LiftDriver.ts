@@ -7,6 +7,8 @@ class LiftDriver{
 
   private tasks : Task[] = new Array<Task>();
 
+  private on = new RunOn();
+
   constructor(floorMin:number,floorMax:number,numberOfWells:number){
     this.floorMax = floorMax;
     this.floorMin = floorMin;
