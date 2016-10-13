@@ -1,0 +1,16 @@
+{
+  "compilerOptions":{
+    "target":"es6",
+    "module":"amd",
+    "sourceMap": true,
+    "outDir": "javascript/",
+    "outFile": "lift.js",
+    "watch": true
+  },
+  "files": [
+    "src/typescript/Declarations.ts",
+    "src/typescript/Floor.ts",
+    "src/typescript/Well.ts",
+    "src/typescript/LiftDriver.ts"
+  ]
+}
