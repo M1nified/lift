@@ -8,19 +8,34 @@ class Floor {
     set number(val) {
         throw new Error("Cannot change floor number");
     }
-    is(floorNumberToCompareWith) {
-        return floorNumberToCompareWith === this.number;
+    is(floorToCompareWith) {
+        if (typeof floorToCompareWith === 'number') {
+            return floorToCompareWith === this.number;
+        }
+        else {
+            return floorToCompareWith.number === this.number;
+        }
     }
     isInBounds(min, max) {
         return this.number <= max && this.number >= min;
     }
 }
 class Well {
-    constructor() {
+    constructor(floorMin, floorMax, driver) {
         this.position = null;
         this.target = null;
         this.isMoving = false;
-        this.maxFPS = 1; // Floors Per Second
+        this.route = null;
+        this.driver = undefined;
+        this._maxFPS = 1; // Floors Per Second
+        this._speedTimeout = 1000 / this._maxFPS;
+        this.runOn = new RunOn();
+        this.floorMin = undefined;
+        this.floorMax = undefined;
+        this.floorMin = floorMin;
+        this.floorMax = floorMax;
+        if (driver)
+            this.driver = driver;
     }
     get direction() {
         if (!this.target || this.target === this.position) {
@@ -32,6 +47,53 @@ class Well {
         else {
             0 /* Up */;
         }
+    }
+    set maxFPS(val) {
+        this._maxFPS = val;
+        this._speedTimeout = 1000 / this._maxFPS;
+    }
+    get maxFPS() {
+        return this._maxFPS;
+    }
+    move(direction) {
+        if (this.isMoving)
+            return false;
+        let shouldStopAtNextGate = false;
+        if (direction === 0 /* Up */) {
+            if (this.position.is(this.floorMax))
+                return false;
+            this.target = new Floor(this.position.number + 1);
+        }
+        if (direction === 1 /* Down */) {
+            if (this.position.is(this.floorMin))
+                return false;
+            this.target = new Floor(this.position.number - 1);
+        }
+        this.isMoving = true;
+        if (this.shouldStopAt(this.target)) {
+            setTimeout(this.stopAtFloor, this._speedTimeout);
+        }
+        else {
+            setTimeout(this.passAFloor, this._speedTimeout);
+        }
+    }
+    passAFloor() {
+        this.runOn.on('passAFloor', true);
+        this.runOn.on('passAFloor', false);
+    }
+    stopAtFloor() {
+        this.runOn.on('stopAtFloor', true);
+        this.runOn.on('stopAtFloor', false);
+    }
+    shouldStopAt(floor) {
+        for (let task of this.route) {
+            if (task.target.is(floor)) {
+                if (task.action === 1 /* Transport */ || task.action === 0 /* Pick */ && task.direction === this.direction) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
 class RunOn {

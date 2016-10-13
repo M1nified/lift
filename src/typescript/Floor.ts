@@ -11,8 +11,12 @@ class Floor{
     this._number = number;
   }
 
-  public is(floorNumberToCompareWith:number):boolean{
-    return floorNumberToCompareWith === this.number;
+  public is(floorToCompareWith:number|Floor):boolean{
+    if(typeof floorToCompareWith === 'number'){
+      return floorToCompareWith === this.number;
+    }else{
+      return floorToCompareWith.number === this.number;
+    }
   }
   public isInBounds(min,max):boolean{
     return this.number<=max && this.number>=min;

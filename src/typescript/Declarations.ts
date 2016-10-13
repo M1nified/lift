@@ -19,5 +19,6 @@ interface InnerButtonAction{
 interface Task{
   action : TaskAction,
   target : Floor,
-  well ?: Well
+  well ?: Well,
+  direction ?: Directions
 }

@@ -12,7 +12,6 @@ class LiftDriver{
   constructor(floorMin:number,floorMax:number,numberOfWells:number){
     this.floorMax = floorMax;
     this.floorMin = floorMin;
-
   }
 
   public outerButtonAction(info:OuterButtonAction, event?:Object){

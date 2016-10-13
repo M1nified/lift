@@ -65,7 +65,7 @@ describe("RunOn",function(){
         console.log('click7 click8');
         done();
       });
-      runOnInstance.on('click7');
+      runOnInstance.on('click8');
     },5000)
     
     afterEach(function(done){
