@@ -2,7 +2,7 @@
 // Generated on Thu Oct 13 2016 18:41:54 GMT+0200 (Środkowoeuropejski czas letni)
 
 module.exports = function(config) {
-  config.set({
+  let configuration = {
 
     // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: '',
@@ -66,5 +66,16 @@ module.exports = function(config) {
     // Concurrency level
     // how many browser should be started simultaneous
     concurrency: Infinity
-  })
+
+    ,customLaunchers:{
+      Chrome_travis_ci:{
+        base:'Chrome',
+        flags:['--no-sandbox']
+      }
+    }
+  };
+  if(process.env.TRAVIS){
+    configuration.browsers = ['Chrome_travis_ci'];
+  }
+  config.set(configuration)
 }
