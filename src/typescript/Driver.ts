@@ -1,11 +1,16 @@
-class LiftDriver{
+class Driver{
 
   private floorMin : number;
   private floorMax : number;
 
   private wells : Well[] = new Array<Well>();
 
-  private tasks : Task[] = new Array<Task>();
+  private _tasks : Task[] = new Array<Task>();
+  public get tasks(){
+    return this._tasks;
+  }
+  public set tasks(val){
+  }
 
   private on = new RunOn();
 
@@ -21,9 +26,11 @@ class LiftDriver{
       }
       let task : Task = {
         action : TaskAction.Pick,
-        target : info.floor
+        target : info.floor,
+        direction : info.direction
       }
-      this.tasks.push(task);
+      this._tasks.push(task);
+      resolve();
     })
   }
   public innerButtonAction(info:InnerButtonAction, event?:Object){
@@ -36,7 +43,24 @@ class LiftDriver{
         target : info.destination,
         well : info.well
       }
-      this.tasks.push(task);
+      this._tasks.push(task);
+      resolve();
     })
+  }
+  public popTask = this.popTasks;
+  public popTasks(tasks:Task[]|Task):Task[]{
+    let tasksArr = !Array.isArray(tasks) ? [tasks] : tasks;
+    let tasksToPopArr = [];
+    this.tasks = this.tasks.filter((thistask)=>{
+      let index = tasksArr.findIndex((tasktopop)=>{
+        return Object.is(tasktopop,thistask);
+      })
+      if(index !== -1){
+        tasksToPopArr.push(tasksArr[index]);
+        return false;
+      }
+      return true;
+    })
+    return tasksToPopArr;
   }
 }

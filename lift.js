@@ -22,7 +22,7 @@ class Floor {
 }
 class Well {
     constructor(floorMin, floorMax, driver) {
-        this.position = null;
+        this._position = null;
         this.target = null;
         this.isMoving = false;
         this.route = null;
@@ -37,11 +37,15 @@ class Well {
         if (driver)
             this.driver = driver;
     }
+    get position() { return this._position; }
+    set position(val) {
+        this._position = typeof val === 'number' ? new Floor(val) : val;
+    }
     get direction() {
-        if (!this.target || this.target === this.position) {
+        if (!this.target || this.target === this._position) {
             return -1 /* None */;
         }
-        else if (this.position.number > this.target.number) {
+        else if (this._position.number > this.target.number) {
             return 1 /* Down */;
         }
         else {
@@ -59,18 +63,19 @@ class Well {
         if (this.isMoving)
             return false;
         let shouldStopAtNextGate = false;
+        this.askDriverForTasks(direction);
         if (direction === 0 /* Up */) {
-            if (this.position.is(this.floorMax))
+            if (this._position.is(this.floorMax))
                 return false;
-            this.target = new Floor(this.position.number + 1);
+            this.target = new Floor(this._position.number + 1);
         }
         if (direction === 1 /* Down */) {
-            if (this.position.is(this.floorMin))
+            if (this._position.is(this.floorMin))
                 return false;
-            this.target = new Floor(this.position.number - 1);
+            this.target = new Floor(this._position.number - 1);
         }
         this.isMoving = true;
-        if (this.shouldStopAt(this.target)) {
+        if (this.shouldItStopAt(this.target)) {
             setTimeout(this.stopAtFloor, this._speedTimeout);
         }
         else {
@@ -79,13 +84,26 @@ class Well {
     }
     passAFloor() {
         this.runOn.on('passAFloor', true);
+        this.move(this.direction);
         this.runOn.on('passAFloor', false);
     }
     stopAtFloor() {
         this.runOn.on('stopAtFloor', true);
+        this.isMoving = false;
+        this.openDoor();
+        this.closeDoor();
+        this.move(this.direction);
         this.runOn.on('stopAtFloor', false);
     }
-    shouldStopAt(floor) {
+    openDoor() {
+        this.runOn.on('openDoor', true);
+        this.runOn.on('openDoor', false);
+    }
+    closeDoor() {
+        this.runOn.on('closeDoor', true);
+        this.runOn.on('closeDoor', false);
+    }
+    shouldItStopAt(floor) {
         for (let task of this.route) {
             if (task.target.is(floor)) {
                 if (task.action === 1 /* Transport */ || task.action === 0 /* Pick */ && task.direction === this.direction) {
@@ -94,6 +112,36 @@ class Well {
             }
         }
         return false;
+    }
+    askDriverForTasks(direction) {
+        let tasksInTheSameDirection = this.driver.tasks.filter((task, index) => {
+            console.log(index, task);
+            return (direction === 0 /* Up */
+                && task.target.number >= this._position.number
+                || direction == 1 /* Down */
+                    && task.target.number <= this._position.number)
+                &&
+                    (task.direction === direction
+                        || task.action === 1 /* Transport */) ? true : false;
+        });
+        let sortedTasks = tasksInTheSameDirection.sort((a, b) => {
+            return a.target.number - b.target.number;
+        });
+        if (sortedTasks.length === 0)
+            return null;
+        let fst = null;
+        if (direction === 0 /* Up */) {
+            fst = sortedTasks[0];
+        }
+        else {
+            fst = sortedTasks[sortedTasks.length - 1];
+        }
+        let tasksToPick = sortedTasks.filter((task, index) => {
+            return task.target.is(fst.target) ? true : false;
+        });
+        let pickedTasks = this.driver.popTasks(tasksToPick);
+        this.route.concat(pickedTasks);
+        return this;
     }
 }
 class RunOn {
@@ -151,13 +199,19 @@ class RunOn {
         return this;
     }
 }
-class LiftDriver {
+class Driver {
     constructor(floorMin, floorMax, numberOfWells) {
         this.wells = new Array();
-        this.tasks = new Array();
+        this._tasks = new Array();
         this.on = new RunOn();
+        this.popTask = this.popTasks;
         this.floorMax = floorMax;
         this.floorMin = floorMin;
+    }
+    get tasks() {
+        return this._tasks;
+    }
+    set tasks(val) {
     }
     outerButtonAction(info, event) {
         return new Promise((resolve, reject) => {
@@ -166,9 +220,11 @@ class LiftDriver {
             }
             let task = {
                 action: 0 /* Pick */,
-                target: info.floor
+                target: info.floor,
+                direction: info.direction
             };
-            this.tasks.push(task);
+            this._tasks.push(task);
+            resolve();
         });
     }
     innerButtonAction(info, event) {
@@ -181,8 +237,24 @@ class LiftDriver {
                 target: info.destination,
                 well: info.well
             };
-            this.tasks.push(task);
+            this._tasks.push(task);
+            resolve();
         });
+    }
+    popTasks(tasks) {
+        let tasksArr = !Array.isArray(tasks) ? [tasks] : tasks;
+        let tasksToPopArr = [];
+        this.tasks = this.tasks.filter((thistask) => {
+            let index = tasksArr.findIndex((tasktopop) => {
+                return Object.is(tasktopop, thistask);
+            });
+            if (index !== -1) {
+                tasksToPopArr.push(tasksArr[index]);
+                return false;
+            }
+            return true;
+        });
+        return tasksToPopArr;
     }
 }
 //# sourceMappingURL=lift.js.map

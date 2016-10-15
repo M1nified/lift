@@ -12,6 +12,6 @@
     "src/typescript/Floor.ts",
     "src/typescript/Well.ts",
     "src/typescript/RunOn.ts",
-    "src/typescript/LiftDriver.ts"
+    "src/typescript/Driver.ts"
   ]
 }
